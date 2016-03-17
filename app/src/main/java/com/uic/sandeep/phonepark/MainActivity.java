@@ -65,6 +65,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
@@ -172,6 +173,9 @@ public class MainActivity extends FragmentActivity implements Connections,
     public static final String GOOGLE_MOBILITY_STATE_PREFIX="Motion State Google : ";
     public static final String INDICATOR_PREFIX="Indicator : ";
     public static GoogleMap mMap;
+
+    public static Polyline currentPolyline = null;
+    public static Marker[] currentMarkers = null;
 
     public static TextToSpeech mSpeech;
 
@@ -322,10 +326,12 @@ public static int pwed = 0;
                     .target(new LatLng(location.getLatitude(), location.getLongitude()) )// Sets the center of the map to Mountain View
                     .bearing(location.getBearing()).zoom(17).build();
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-            DisplayRouteAsyncTask searchPark = new DisplayRouteAsyncTask(location);
-            searchPark.execute();
+            DisplayNearestParkBlock displayNearestParkBlock = new DisplayNearestParkBlock(location);
+            displayNearestParkBlock.execute();
+
             //text_navigation.setText("Rid = " + pwed);
             pwed++;
+
         }
     }
 
@@ -335,7 +341,7 @@ public static int pwed = 0;
                 actionsOnBTDetection(eventCode, location, null);
             } else {
                 pendingBTDetection = new BTPendingDetection(eventCode, location);
-                Toast.makeText(getApplicationContext(), "btdetection pending", 2).show();
+                Toast.makeText(getApplicationContext(), "btdetection pending", Toast.LENGTH_SHORT).show();
             }
         }else{
             pendingBTDetection = null;
@@ -607,7 +613,7 @@ public static int pwed = 0;
                     currentTransportationMode = mostLikelyActivityType;
                     if (currentTransportationMode == DetectedActivity.IN_VEHICLE) {
                         if (pendingBTDetection != null && pendingBTDetection.eventCode() == Constants.OUTCOME_UNPARKING) {
-                            Toast.makeText(getApplicationContext(), "mode=invehicle, bt detection confirmed", 2).show();
+                            Toast.makeText(getApplicationContext(), "mode=invehicle, bt detection confirmed", Toast.LENGTH_LONG).show();
                             actionsOnBTDetection(pendingBTDetection.eventCode(), pendingBTDetection.location(), null);
                             pendingBTDetection = null;
                         }
@@ -1046,23 +1052,41 @@ public static int pwed = 0;
         //mClassificationManager.mClassfiers.get(Constants.SENSOR_MICROPHONE).classify(features);
     }
 
+
+    public static void showNearestAvailabilityMap(List<ParkingBlock> nearestParkingBlocks)
+    {
+        for (int i=0; i<nearestParkingBlocks.size(); i++)
+        {
+            ParkingBlock nearest_parkingBlock = nearestParkingBlocks.get(i);
+            PolylineOptions line = new PolylineOptions().add(nearest_parkingBlock.startLocation, nearest_parkingBlock.endLocation)
+                    .width(20).color(nearest_parkingBlock.getColorByAvailability());
+            Polyline polyline = mMap.addPolyline(line);
+            nearest_parkingBlock.display = polyline;
+        }
+
+    }
+
     public static void showParkableMap(List<LatLng> pblocks)
     {
         //Take the first 5 blocks and display
-        mMap.clear();
+        if(currentPolyline!=null){
+            currentPolyline.remove();
+        }
+        if(currentMarkers!=null){
+            for (int k =0;k<currentMarkers.length;k++){
+                currentMarkers[k].remove();
+            }
+        }
+        currentMarkers = new Marker[pblocks.size()];
+       // Bounding box for UIC Area
         Polygon bbx = mMap.addPolygon(new PolygonOptions()
                 .add(new LatLng(41.884, -87.6245),
                         new LatLng(41.8840, -87.6636),
-                        new LatLng(41.8677,-87.6641),
+                        new LatLng(41.8677, -87.6641),
                         new LatLng(41.8658, -87.6639),
                         new LatLng(41.8633, -87.6614),
-                        new LatLng(41.8631, -87.6254) )
+                        new LatLng(41.8631, -87.6254))
                 .strokeColor(Color.RED));
-
-        Polyline line = mMap.addPolyline(new PolylineOptions()
-                .addAll(pblocks)
-                .width(5)
-                .color(Color.BLACK));
 
         for (int i=0; i<pblocks.size()-1; i++)
         {
@@ -1077,13 +1101,13 @@ public static int pwed = 0;
             float anchorY = 0.5f;
             Matrix matrix = new Matrix();
             matrix.setRotate(adjBearing);
-// Create the rotated arrowhead bitmap
+
             Bitmap arrow_head = BitmapFactory.decodeResource(MainActivity.getContext().getResources(), R.drawable.dir_0);
 
             Bitmap arrowheadBitmap = Bitmap.createBitmap(arrow_head, 0, 0,
                     arrow_head.getWidth(), arrow_head.getHeight(), matrix, true);
-// Now we are gonna to add a marker
-            mMap.addMarker(new MarkerOptions()
+
+            currentMarkers[i] = mMap.addMarker(new MarkerOptions()
                     .position(pblocks.get(i))
                     .anchor(anchorX, anchorY)
                     .flat(true) // Cease Rotation
@@ -1091,13 +1115,12 @@ public static int pwed = 0;
                     .icon(BitmapDescriptorFactory.fromBitmap(arrowheadBitmap)));
         }
 
-        //Animate Map
-/*        if(pblocks.size()>0) {
-            CameraPosition cameraPosition = new CameraPosition.Builder()
-                    .target(pblocks.get(0))     // Sets the center of the map to Mountain View
-                    .zoom(17).build();
-            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        }*/
+        currentPolyline = mMap.addPolyline(new PolylineOptions()
+                .addAll(pblocks)
+                .width(5)
+                .zIndex(100)
+                .color(Color.BLACK));
+
 
     }
     static double degreesPerRadian = 180.0 / Math.PI;
@@ -1110,7 +1133,8 @@ public static int pwed = 0;
         double lon2 = to.longitude * Math.PI / 180.0;
 
         // Compute the angle.
-        double angle = - Math.atan2( Math.sin( lon1 - lon2 ) * Math.cos( lat2 ), Math.cos( lat1 ) * Math.sin( lat2 ) - Math.sin( lat1 ) * Math.cos( lat2 ) * Math.cos( lon1 - lon2 ) );
+        double angle = - Math.atan2( Math.sin( lon1 - lon2 ) * Math.cos( lat2 ),
+                Math.cos( lat1 ) * Math.sin( lat2 ) - Math.sin( lat1 ) * Math.cos( lat2 ) * Math.cos( lon1 - lon2 ) );
 
         if (angle < 0.0)
             angle += Math.PI * 2.0;
@@ -1804,11 +1828,11 @@ public static int pwed = 0;
         reportGlobalNumber++;
         if (resID==R.raw.vehicle_parked) {
             mSpeech.speak(reportGlobalNumber + " Fusion detected parking at " + curTimeString, TextToSpeech.QUEUE_ADD, null);
-            Toast.makeText(getApplicationContext(), "Fusion detected leaving parking space at " + curTimeString, 2).show();
+            Toast.makeText(getApplicationContext(), "Fusion detected leaving parking space at " + curTimeString, Toast.LENGTH_LONG).show();
         }
         if (resID==R.raw.vehicle_deparked) {
             mSpeech.speak(reportGlobalNumber + " Fusion detected leaving parking space at " + curTimeString, TextToSpeech.QUEUE_ADD, null);
-            Toast.makeText(getApplicationContext(), "Fusion detected leaving parking space at " + curTimeString, 2).show();
+            Toast.makeText(getApplicationContext(), "Fusion detected leaving parking space at " + curTimeString, Toast.LENGTH_LONG).show();
         }
         //3. log the address of event
         String logMsg=prefix+"\nNotification generation time:"+curTimeString+"\nlocation:"+location.toString()+"\n";
@@ -1842,7 +1866,7 @@ public static int pwed = 0;
         //updateAvailabilityDisplay(eventCode, location);
         //add a marker on the map
         Log.e(LOG_TAG, "operations on map completed");
-        updateAvailabilityDisplay(eventCode, location);
+        //updateAvailabilityDisplay(eventCode, location);
     }
 
 
@@ -1880,7 +1904,7 @@ public static int pwed = 0;
     }
 
 
-    public void updateAvailabilityDisplay(int eventCode, Location location) {
+/*    public void updateAvailabilityDisplay(int eventCode, Location location) {
         //Put a star on location
 
         // find closest street block within 30 meters
@@ -1901,7 +1925,7 @@ public static int pwed = 0;
 
         if (matchedBlock != null) {
             //Toast.makeText(getApplicationContext(), "a block matched", 2).show();
-            String block_name = matchedBlock.meterAddress/*speechConditioner(matchedBlock.meterAddress)*/;
+            String block_name = matchedBlock.meterAddress*//*speechConditioner(matchedBlock.meterAddress)*//*;
             if(eventCode==Constants.OUTCOME_PARKING) {
                 //matchedBlock.availability = 0;
                 nearestParkingBlocks.elementAt(index).availability -=1;
@@ -1912,7 +1936,7 @@ public static int pwed = 0;
                 mSpeech.speak("Vehicle DeParked at"+block_name, TextToSpeech.QUEUE_ADD, null);
             }
         }
-    }
+    }*/
 
 
     @Override
