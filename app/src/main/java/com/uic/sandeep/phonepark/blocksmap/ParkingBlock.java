@@ -11,10 +11,10 @@ public class ParkingBlock {
 	public LatLng endLocation;
 	public String meterAddress;
 	//public double availability =5;
-	public int availability =0;
+	public double availability =0.0;
 	public Polyline display;
 	
-	public ParkingBlock(String meterAddress, LatLng meterLocation, LatLng startLocation, LatLng endLocation, int availability) {
+	public ParkingBlock(String meterAddress, LatLng meterLocation, LatLng startLocation, LatLng endLocation, double availability) {
 		this.meterAddress = meterAddress;
 		this.meterLocation = meterLocation;
 		this.startLocation = startLocation;
@@ -29,11 +29,11 @@ public class ParkingBlock {
 	
 	public int getColorByAvailability() {
 		int color;
-		if (availability < 1) {
+		if (availability < 0.25) {
 			color = Color.BLACK;
-		} else if (availability < 2) {
+		} else if (availability < 0.5) {
 			color = Color.RED;
-		} else if (availability < 3) {
+		} else if (availability < 0.75) {
 			color = Color.YELLOW;
 		}else {
 			color = Color.GREEN;

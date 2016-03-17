@@ -2,14 +2,8 @@ package com.uic.sandeep.phonepark;
 
 import android.location.Location;
 import android.os.AsyncTask;
-import android.speech.tts.TextToSpeech;
 import android.util.Log;
 
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.BufferedReader;
@@ -114,7 +108,7 @@ class DisplayRouteAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
 
             Log.e(LOG_TAG,"Display Activity 2 "+blocks.toString());
 
-            if(blocks.size()>0) {
+        /*    if(blocks.size()>0) {
 
                 CurrentLocationListener currentLocationListener = CurrentLocationListener.getInstance();
                 currentLocationListener.setBlocks(blocks);
@@ -125,7 +119,7 @@ class DisplayRouteAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
                     LocationServices.FusedLocationApi.requestLocationUpdates(
                             MainActivity.mGoogleApiClient, currentLocationRequest, currentLocationListener);
                 }
-            }
+            }*/
         }
 
     }
@@ -134,6 +128,7 @@ class DisplayRouteAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
 
 }
 
+/*
  class CurrentLocationListener implements LocationListener {
      public static final String LOG_TAG=CurrentLocationListener.class.getCanonicalName();
 
@@ -146,10 +141,12 @@ class DisplayRouteAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
     public void setBlocks(List<LatLng> blocks){
         pBlocks = blocks;
     }
-       /*private CurrentLocationListener(List<LatLng> blocks){
+       */
+/*private CurrentLocationListener(List<LatLng> blocks){
             this.pBlocks = blocks;
 
-        }*/
+        }*//*
+
 
     public static CurrentLocationListener getInstance(){
 
@@ -191,8 +188,10 @@ class DisplayRouteAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
                     MainActivity.mSpeech.speak("Displaying Last set of parking blocks within your reach. Please restart your search", TextToSpeech.QUEUE_ADD, null);
                 } else {
                     MainActivity.showParkableMap(pBlocks.subList(0, 6));
-                    /*List<LatLng> picked = new ArrayList<LatLng>(pBlocks.subList(0,4));
-                    pBlocks.removeAll(picked);*/
+                    */
+/*List<LatLng> picked = new ArrayList<LatLng>(pBlocks.subList(0,4));
+                    pBlocks.removeAll(picked);*//*
+
                     Log.e(LOG_TAG, "Display Activity 4 "+ pBlocks.toString());
                     pBlocks = new ArrayList<LatLng>(pBlocks.subList(4,pBlocks.size()));
 
@@ -207,4 +206,4 @@ class DisplayRouteAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
 
     }
 
-}
+}*/

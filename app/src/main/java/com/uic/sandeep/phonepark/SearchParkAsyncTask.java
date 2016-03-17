@@ -3,6 +3,9 @@ package com.uic.sandeep.phonepark;
 import android.location.Location;
 import android.os.AsyncTask;
 
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.BufferedReader;
@@ -83,8 +86,79 @@ class SearchParkAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
     protected void onPostExecute(List<LatLng> blocks) {
         super.onPostExecute(blocks);
         MainActivity.showParkableMap(blocks);
+        //Check if the user is within the limits
+        CurrentLocationListener currentLocationListener = CurrentLocationListener.getInstance();
+        currentLocationListener.setBlocks(blocks);
+
+        LocationRequest currentLocationRequest = new LocationRequest();
+        currentLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY).setInterval(1000);
+        if (!MainActivity.isParked) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    MainActivity.mGoogleApiClient, currentLocationRequest, currentLocationListener);
+        }
     }
 
+
+}
+class CurrentLocationListener implements LocationListener {
+    public static final String LOG_TAG=CurrentLocationListener.class.getCanonicalName();
+
+    List<LatLng> pBlocks = new ArrayList<LatLng>();
+    int ctr = 0;
+    static CurrentLocationListener ccLocationListener = null;
+
+    private CurrentLocationListener(){}
+
+    public void setBlocks(List<LatLng> blocks){
+        pBlocks = blocks;
+    }
+
+
+    public static CurrentLocationListener getInstance(){
+
+        if(ccLocationListener == null){
+            ccLocationListener = new CurrentLocationListener();
+            return ccLocationListener;
+        }
+        else
+            return ccLocationListener;
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
+        if(!MainActivity.isParked) {
+
+            //Check all the block mids
+            boolean flag = false;
+            float distance = 0;
+            int nDist = 0;
+            for(int i=0;i<pBlocks.size();i++){
+                Location endLoc = new Location("");
+                endLoc.setLongitude(pBlocks.get(i).longitude);
+                endLoc.setLatitude(pBlocks.get(i).latitude);
+                distance = endLoc.distanceTo(location);
+                if(distance>100){
+                    flag = flag||false;
+                }else{
+                    flag = flag||true;
+                    nDist =(int)distance;
+                }
+            }
+            MainActivity.text_parking_info.setText("Dist = "+nDist+"m - time = "+ctr+" s status = "+flag);
+            ctr++;
+            if(!flag){
+                //Query
+                new SearchParkAsyncTask(location).execute();
+                LocationServices.FusedLocationApi.removeLocationUpdates(MainActivity.mGoogleApiClient, this);
+            }
+
+        }else{
+            LocationServices.FusedLocationApi.removeLocationUpdates(MainActivity.mGoogleApiClient, this);
+        }
+
+    }
 
 }
 
