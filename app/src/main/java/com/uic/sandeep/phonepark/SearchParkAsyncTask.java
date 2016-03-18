@@ -21,15 +21,15 @@ import java.util.List;
  */
 /* Inner class to get response */
 class SearchParkAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
+
     StringBuffer chaine = new StringBuffer("");
     //List<ParkingBlock> pb_list = new ArrayList<ParkingBlock>();
     List<LatLng> pt_list = new ArrayList<LatLng>();
     Location loc;
-    SearchParkAsyncTask(Location location){
+    SearchParkAsyncTask(Location location) {
         this.loc = location;
+
     }
-
-
     protected void onPreExecute(Void aVoid) {
         MainActivity.text_navigation.setText("Connecting to server ...");
     }
@@ -52,9 +52,6 @@ class SearchParkAsyncTask extends AsyncTask<Void, Void, List<LatLng>> {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             System.out.println("URL"+urlString.toString());
 
-/*        connection.setRequestProperty("User-Agent", "");
-        connection.setRequestMethod("POST");
-        connection.setDoInput(true)*/;
         connection.connect();
 
         InputStream inputStream = connection.getInputStream();
@@ -128,29 +125,37 @@ class CurrentLocationListener implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {
 
+        MainActivity.adjCameraMap(location);
+
         if(!MainActivity.isParked) {
+/*            float azimut = location.getBearing();
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(new LatLng(location.getLatitude(), location.getLongitude()))// Sets the center of the map to Mountain View
+                    .bearing(azimut).tilt(30).zoom(17).build();
+            MainActivity.mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));*/
 
             //Check all the block mids
             boolean flag = false;
             float distance = 0;
-            int nDist = 0;
-            for(int i=0;i<pBlocks.size();i++){
+            int nDist = Integer.MAX_VALUE;
+            for(int i=0;i<pBlocks.size()-1;i++){
                 Location endLoc = new Location("");
                 endLoc.setLongitude(pBlocks.get(i).longitude);
                 endLoc.setLatitude(pBlocks.get(i).latitude);
                 distance = endLoc.distanceTo(location);
-                if(distance>100){
+                if(distance>50){
                     flag = flag||false;
                 }else{
                     flag = flag||true;
-                    nDist =(int)distance;
+                    if(nDist>(int)distance)
+                        nDist =(int)distance;
                 }
             }
             MainActivity.text_parking_info.setText("Dist = "+nDist+"m - time = "+ctr+" s status = "+flag);
             ctr++;
             if(!flag){
                 //Query
-                new SearchParkAsyncTask(location).execute();
+                new DisplayNearestParkBlock(location).execute();
                 LocationServices.FusedLocationApi.removeLocationUpdates(MainActivity.mGoogleApiClient, this);
             }
 

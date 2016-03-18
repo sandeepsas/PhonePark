@@ -274,6 +274,64 @@ public class MainActivity extends FragmentActivity implements Connections,
     // Store the current request type (ADD or REMOVE)
     private Constants.REQUEST_TYPE mRequestType;
 
+    private  SensorManager mSensorManageForMap;
+    private  Sensor accelerometer;
+    private  Sensor magnetometer;
+    private  float[] mGravity;
+    private  float[] mGeomagnetic;
+
+    private SensorEventListener mSensorListnerForMap = new SensorEventListener(){
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+            mGravity = event.values;
+        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+            mGeomagnetic = event.values;
+        if (mGravity != null && mGeomagnetic != null) {
+            float R[] = new float[9];
+            float I[] = new float[9];
+            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+            if (success) {
+                float orientation[] = new float[3];
+                SensorManager.getOrientation(R, orientation);
+                float azimut = orientation[0]; // orientation contains: azimut, pitch and roll
+                azimuthInDegress = (float)Math.toDegrees(azimut);
+                if (azimuthInDegress < 0.0f) {
+                    azimuthInDegress += 360.0f;
+                }
+
+            }
+        }
+
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+};
+
+    private  static Location currentLoc;
+    private static float azimuthInDegress =0;
+    public static void adjCameraMap(Location loci1) {
+        currentLoc = loci1;
+        if(currentLoc.getSpeed()<10){
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(new LatLng(currentLoc.getLatitude(), currentLoc.getLongitude()))// Sets the center of the map to Mountain View
+                    .bearing(azimuthInDegress).tilt(30).zoom(17).build();
+            MainActivity.mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        }else{
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(new LatLng(currentLoc.getLatitude(), currentLoc.getLongitude()))// Sets the center of the map to Mountain View
+                    .bearing(currentLoc.getBearing()).tilt(30).zoom(17).build();
+            MainActivity.mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        }
+
+
+
+    }
+
 
     public class BluetoothLocationClientListener implements LocationListener {
         int eventCode;
@@ -320,11 +378,11 @@ public static int pwed = 0;
                             new LatLng(41.8677,-87.6641),
                             new LatLng(41.8658, -87.6639),
                             new LatLng(41.8633, -87.6614),
-                            new LatLng(41.8631, -87.6254) )
+                            new LatLng(41.8631, -87.6254) ).zIndex(10)
                     .strokeColor(Color.RED));
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(new LatLng(location.getLatitude(), location.getLongitude()) )// Sets the center of the map to Mountain View
-                    .bearing(location.getBearing()).zoom(17).build();
+                    .bearing(location.getBearing()).tilt(30).zoom(17).build();
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
             DisplayNearestParkBlock displayNearestParkBlock = new DisplayNearestParkBlock(location);
             displayNearestParkBlock.execute();
@@ -430,13 +488,20 @@ public static int pwed = 0;
         mLogManager.log(logMsg, Constants.LOG_FILE_TYPE[Constants.LOG_TYPE_DETECTION_REPORT]);
 
         //4. show on the map
-        mMap.clear();
+        if(currentPolyline!=null){
+            currentPolyline.remove();
+        }
+        if(currentMarkers!=null){
+            for (int k =0;k<currentMarkers.length;k++){
+                currentMarkers[k].remove();
+            }
+        }
         //mEventDetectionNotificationManager.addMarkersToMap(mMap, curTimeString, prefix
         //		, location.getLatitude(), location.getLongitude(), location.getAltitude(),	markerColor);
         //center and zoom in the map
         CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()) )// Sets the center of the map to Mountain View
-                .bearing(location.getBearing()).zoom(17).build();
+                .bearing(location.getBearing()).tilt(30).zoom(17).build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
         //5. update availability display
@@ -910,6 +975,13 @@ public static int pwed = 0;
         }
         mContext = this;
 
+        mSensorManageForMap = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        accelerometer = mSensorManageForMap.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magnetometer = mSensorManageForMap.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        mSensorManageForMap.registerListener(mSensorListnerForMap, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManageForMap.registerListener(mSensorListnerForMap, magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+
 
 
         /***************************************************/
@@ -1077,7 +1149,7 @@ public static int pwed = 0;
                 currentMarkers[k].remove();
             }
         }
-        currentMarkers = new Marker[pblocks.size()];
+        currentMarkers = new Marker[pblocks.size()-1];
        // Bounding box for UIC Area
         Polygon bbx = mMap.addPolygon(new PolygonOptions()
                 .add(new LatLng(41.884, -87.6245),
@@ -1120,6 +1192,13 @@ public static int pwed = 0;
                 .width(5)
                 .zIndex(100)
                 .color(Color.BLACK));
+
+/*        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(location.getLatitude(), location.getLongitude()) )
+                .zoom(17)
+                .bearing(location.getBearing())
+                .tilt(30)
+                .build();*/
 
 
     }
@@ -1301,6 +1380,7 @@ public static int pwed = 0;
     protected void onDestroy(){
         super.onDestroy();
         mGoogleApiClient.disconnect();
+        mSensorManageForMap.unregisterListener(mSensorListnerForMap);
     }
 
     /*
@@ -1855,7 +1935,7 @@ public static int pwed = 0;
                 .target(new LatLng(location.getLatitude(), location.getLongitude()) )     // Sets the center of the map to Mountain View
                 .zoom(17)                   // Sets the zoom
                         .bearing(location.getBearing())                // Sets the orientation of the camera to east
-                        //.tilt(30)                   // Sets the tilt of the camera to 30 degrees
+                        .tilt(30)                   // Sets the tilt of the camera to 30 degrees
                 .build();                   // Creates a CameraPosition from the builder
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         //add a marker on the map
