@@ -1033,6 +1033,9 @@ public static int pwed = 0;
             @Override
             public void onClick(View v) {
 
+                if(!mGoogleApiClient.isConnected()){
+                    mGoogleApiClient.connect();
+                }
                 isParked = false;
                 mParkingLocationRequest = new LocationRequest();
                 mParkingLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY).setNumUpdates(1);
@@ -1638,6 +1641,10 @@ public static int pwed = 0;
                 return true;
 
             // For any other choice, pass it to the super()
+            case R.id.menu_item_stop_routing:
+               // mGoogleApiClient.disconnect();
+                isParked = true;
+                mMap.clear();
             default:
                 return super.onOptionsItemSelected(item);
         }
