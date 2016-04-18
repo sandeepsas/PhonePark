@@ -24,9 +24,13 @@ public final class Constants {
 		public static final long FIVE_MINUTE = ONE_MINUTE * 5;
 		public static final long THIRTY_MINUTE = ONE_MINUTE * 30;
 
-	public static String SYSTEM_IP = "http://73.247.220.84:8080";
+	//public static String SYSTEM_IP = "http://73.247.220.84:8080";
+	//public static String SYSTEM_IP = "http://192.168.0.111:4567/";
+	//public static String SYSTEM_IP = "localhost:4567/";
 
 	//public static String SYSTEM_IP = "http://73.44.56.251:4567";
+
+	public static String SYSTEM_IP = "http://10.8.233.68:4567/";
     
 			
 	/************************************************
