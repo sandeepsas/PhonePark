@@ -693,7 +693,7 @@ public static int pwed = 0;
 
                         HashMap<Integer, ArrayList<Double>> mstVector=new HashMap<Integer, ArrayList<Double>>();
                         mstVector.put(Constants.INDICATOR_MST, features);
-                        Log.d(LOG_TAG, "Google MST Vector: "+features.toString());
+                       // Log.d(LOG_TAG, "Google MST Vector: "+features.toString());
                     }
                     probOfOnFootAndInVehicleOfLastUpdate=probsOfNewUpdate;
                 }
