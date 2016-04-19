@@ -99,8 +99,6 @@ class DisplayNearestParkBlock extends AsyncTask<Void, Void, List<ParkingBlock>> 
     protected void onPostExecute(List<ParkingBlock> blocks) {
         super.onPostExecute(blocks);
         MainActivity.showNearestAvailabilityMap(blocks);
-        /*DisplayRouteAsyncTask searchPark = new DisplayRouteAsyncTask(loc);
-        searchPark.execute();*/
         new SearchParkAsyncTask(loc).execute();
     }
 
