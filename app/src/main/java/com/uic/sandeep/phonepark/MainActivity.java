@@ -332,7 +332,7 @@ public class MainActivity extends FragmentActivity implements Connections,
                 .strokeColor(Color.RED));
     }
 
-public static int pwed = 0;
+
     public class ParkingSearchClientListener implements LocationListener {
 
         public ParkingSearchClientListener(){
@@ -355,9 +355,6 @@ public static int pwed = 0;
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
             DisplayNearestParkBlock displayNearestParkBlock = new DisplayNearestParkBlock(location);
             displayNearestParkBlock.execute();
-
-            //text_navigation.setText("Rid = " + pwed);
-            pwed++;
 
         }
     }
@@ -1958,42 +1955,6 @@ public static int pwed = 0;
             }
         }
     }
-
-
-/*    public void updateAvailabilityDisplay(int eventCode, Location location) {
-        //Put a star on location
-
-        // find closest street block within 30 meters
-        LatLng point = new LatLng(location.getLatitude(),location.getLongitude());
-        double minDist = Double.MAX_VALUE;
-        ParkingBlock matchedBlock = null;
-        int matched_block_id;
-        for (int i = 0; i < nearestParkingBlocks.size(); i++) {
-            ParkingBlock parkingBlock = nearestParkingBlocks.elementAt(i);
-            double dist = parkingBlock.distanceToPoint(point);
-            if (dist < minDist) {
-                minDist = dist;
-                matchedBlock = parkingBlock;
-            }
-        }
-
-        int index = nearestParkingBlocks.indexOf(matchedBlock);
-
-        if (matchedBlock != null) {
-            //Toast.makeText(getApplicationContext(), "a block matched", 2).show();
-            String block_name = matchedBlock.meterAddress*//*speechConditioner(matchedBlock.meterAddress)*//*;
-            if(eventCode==Constants.OUTCOME_PARKING) {
-                //matchedBlock.availability = 0;
-                nearestParkingBlocks.elementAt(index).availability -=1;
-                mSpeech.speak("Vehicle Parked at"+block_name, TextToSpeech.QUEUE_ADD, null);
-            } else {
-                //matchedBlock.availability = 1;
-                nearestParkingBlocks.elementAt(index).availability +=1;
-                mSpeech.speak("Vehicle DeParked at"+block_name, TextToSpeech.QUEUE_ADD, null);
-            }
-        }
-    }*/
-
 
     @Override
     public void onConnectionFailed(ConnectionResult arg0) {
